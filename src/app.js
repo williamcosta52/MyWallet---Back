@@ -46,7 +46,69 @@ app.post("/cadastro", async (req, res) => {
 			.insertOne({ name, email, password: encryptPassword });
 		res.status(201).send("created!");
 	} catch (err) {
-		console.log(err.message);
+		res.send(err.message);
+	}
+});
+
+app.post("/login", async (req, res) => {
+	const { email, password } = req.body;
+	const token = uuid();
+	const loginSchema = joi.object({
+		email: joi.string().email().required(),
+		password: joi.string().required().min(3),
+	});
+	try {
+		const validation = loginSchema.validate(
+			{ email, password },
+			{ abortEarly: false }
+		);
+		if (validation.error) {
+			const errors = validation.error.details.map((d) => d.message);
+			res.status(422).send(errors);
+		}
+		const verifyUser = await db.collection("users").findOne({ email });
+		if (!verifyUser) return res.status(404).send("Usuário não encontrado!");
+
+		if (verifyUser && bcrypt.compareSync(password, verifyUser.password)) {
+			return res.status(200).send(token);
+		} else {
+			return res.sendStatus(401);
+		}
+	} catch (err) {
+		res.send(err.message);
+	}
+});
+
+app.post("/nova-transacao/:tipo", async (req, res) => {
+	const { authorization } = req.headers;
+	const { type } = req.params;
+	const { value, description } = req.body;
+	const transaction = { id: uuid.v4(), value, description };
+
+	const token = authorization?.replace("Bearer ", "");
+	if (!token) return res.sendStatus(401);
+
+	const schema = Joi.object({
+		value: joi.number().positive().precision(2).required(),
+		description: joi.string().required(),
+	});
+	const validation = schema.validate({ value, description });
+
+	if (validation.error) {
+		const errors = validation.error.details.map((d) => d.message);
+		res.status(422).send(errors);
+	}
+	try {
+		if (type === "entrada") {
+			await db.collection("transactions").insertOne(transaction);
+			return res.sendStatus(201);
+		} else if (type === "saida") {
+			const { id } = req.body;
+			await db.collection("transactions").deleteOne({ id });
+			return res.sendStatus(201);
+		}
+	} catch (err) {
+		res.send(err.message);
 	}
 });
 

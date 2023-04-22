@@ -81,14 +81,14 @@ app.post("/login", async (req, res) => {
 
 app.post("/nova-transacao/:tipo", async (req, res) => {
 	const { authorization } = req.headers;
-	const { type } = req.params;
+	const { tipo } = req.params;
 	const { value, description } = req.body;
-	const transaction = { id: uuid.v4(), value, description };
+	const transaction = { id: uuid(), value, description };
 
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
 
-	const schema = Joi.object({
+	const schema = joi.object({
 		value: joi.number().positive().precision(2).required(),
 		description: joi.string().required(),
 	});
@@ -99,10 +99,10 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 		res.status(422).send(errors);
 	}
 	try {
-		if (type === "entrada") {
+		if (tipo === "entrada") {
 			await db.collection("transactions").insertOne(transaction);
 			return res.sendStatus(201);
-		} else if (type === "saida") {
+		} else if (tipo === "saida") {
 			const { id } = req.body;
 			await db.collection("transactions").deleteOne({ id });
 			return res.sendStatus(201);
@@ -112,5 +112,20 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 	}
 });
 
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Rodando na porta ${PORT}`));
+app.get("/transacoes", async (req, res) => {
+	const { authorization } = req.headers;
+	const token = authorization?.replace("Bearer ", "");
+	if (!token) return res.sendStatus(401);
+
+	try {
+		const transactions = db
+			.collection("transactions")
+			.find({ id: token })
+			.toArray();
+		return res.send(transactions);
+	} catch (err) {
+		res.send(err.message);
+	}
+});
+
+export default app;

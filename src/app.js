@@ -131,7 +131,7 @@ app.get("/transacoes", async (req, res) => {
 	}
 });
 
-app.get("/usuarios", async (req, res) => {
+app.post("/usuarios", async (req, res) => {
 	const { email } = req.body;
 	try {
 		const user = await db.collection("users").findOne({ email });

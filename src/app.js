@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import joi from "joi";
 import bcrypt from "bcrypt";
 import { v4 as uuid } from "uuid";
+import dayjs from "dayjs";
 
 const app = express();
 
@@ -112,7 +113,7 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 			return res.sendStatus(201);
 		} else if (tipo === "saida") {
 			const { id } = req.body;
-			await db.collection("transactions").deleteOne({ id });
+			await db.collection("transactions").deleteOne({ id: transaction.id });
 			return res.sendStatus(201);
 		}
 	} catch (err) {
@@ -128,7 +129,7 @@ app.get("/transacoes", async (req, res) => {
 	try {
 		const transactions = await db
 			.collection("transactions")
-			.find({ email })
+			.find({ id: token })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

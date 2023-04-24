@@ -53,7 +53,6 @@ app.post("/cadastro", async (req, res) => {
 
 app.post("/login", async (req, res) => {
 	const { email, password } = req.body;
-	const token = uuid();
 	const loginSchema = joi.object({
 		email: joi.string().email().required(),
 		password: joi.string().required().min(3),
@@ -71,6 +70,10 @@ app.post("/login", async (req, res) => {
 		if (!verifyUser) return res.status(404).send("Usuário não encontrado!");
 
 		if (verifyUser && bcrypt.compareSync(password, verifyUser.password)) {
+			const token = uuid();
+
+			await db.collection("sessions").insertOne({ userId: user._id, token });
+
 			return res.status(200).send(token);
 		} else {
 			return res.sendStatus(401);
@@ -123,11 +126,15 @@ app.get("/transacoes", async (req, res) => {
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
 	const id = uuid();
-
 	try {
+		const session = await db.collection("sessions").findOne({ token });
+		if (!session) return res.sendStatus(401);
+		const user = await db.collection("users").findOne({
+			_id: session.userId,
+		});
 		const transactions = await db
 			.collection("transactions")
-			.find({ id: id })
+			.find({ id: user })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

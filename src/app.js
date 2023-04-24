@@ -22,8 +22,6 @@ try {
 }
 const db = mongoClient.db();
 
-const user = [];
-
 const userSchema = joi.object({
 	name: joi.string().required(),
 	email: joi.string().email().required(),
@@ -35,7 +33,6 @@ app.post("/cadastro", async (req, res) => {
 	const encryptPassword = bcrypt.hashSync(password, 10);
 	try {
 		const verifyUser = await db.collection("users").findOne({ email });
-		user.push(verifyUser);
 		if (verifyUser) return res.status(409).send("Email já cadastrado!");
 		const validation = userSchema.validate(
 			{ name, email, password },

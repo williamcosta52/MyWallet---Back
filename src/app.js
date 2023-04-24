@@ -128,7 +128,7 @@ app.get("/transacoes", async (req, res) => {
 	try {
 		const transactions = await db
 			.collection("transactions")
-			.find({ id: token })
+			.find({ email })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

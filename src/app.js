@@ -86,7 +86,12 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 	const { authorization } = req.headers;
 	const { tipo } = req.params;
 	const { value, description } = req.body;
-	const transaction = { id: uuid(), value, description };
+	const transaction = {
+		id: uuid(),
+		value,
+		description,
+		date: dayjs().format("DD:MM"),
+	};
 
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
@@ -121,10 +126,7 @@ app.get("/transacoes", async (req, res) => {
 	if (!token) return res.sendStatus(401);
 
 	try {
-		const transactions = db
-			.collection("transactions")
-			.find({ id: token })
-			.toArray();
+		const transactions = db.collection("transactions").find(token).toArray();
 		return res.send(transactions);
 	} catch (err) {
 		res.send(err.message);

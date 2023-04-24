@@ -126,7 +126,10 @@ app.get("/transacoes", async (req, res) => {
 	if (!token) return res.sendStatus(401);
 
 	try {
-		const transactions = db.collection("transactions").find(token).toArray();
+		const transactions = await db
+			.collection("transactions")
+			.find({ id: token })
+			.toArray();
 		return res.send(transactions);
 	} catch (err) {
 		res.send(err.message);

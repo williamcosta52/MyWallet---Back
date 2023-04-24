@@ -125,11 +125,12 @@ app.get("/transacoes", async (req, res) => {
 	const { authorization } = req.headers;
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
+	const id = uuid();
 
 	try {
 		const transactions = await db
 			.collection("transactions")
-			.find({ id: token })
+			.find({ id: id })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

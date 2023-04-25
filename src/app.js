@@ -118,7 +118,7 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 		} else if (tipo === "saida") {
 			await db
 				.collection("transactions")
-				.insertOne({ ...transaction, type: "saida" });
+				.insertOne({ ...transaction, type: "saida", idUser: session.userId });
 			return res.sendStatus(201);
 		}
 	} catch (err) {

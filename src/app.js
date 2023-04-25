@@ -93,7 +93,7 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 	const transaction = {
 		value,
 		description,
-		date: dayjs().format("DD:MM"),
+		date: dayjs().format("DD/MM"),
 	};
 
 	const schema = joi.object({

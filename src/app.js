@@ -86,19 +86,20 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 	const { authorization } = req.headers;
 	const { tipo } = req.params;
 	const { value, description } = req.body;
+
+	const token = authorization?.replace("Bearer ", "");
+	if (!token) return res.sendStatus(401);
+
 	const transaction = {
-		id: uuid(),
 		value,
 		description,
 		date: dayjs().format("DD:MM"),
 	};
 
-	const token = authorization?.replace("Bearer ", "");
-	if (!token) return res.sendStatus(401);
-
 	const schema = joi.object({
 		value: joi.number().positive().precision(2).required(),
 		description: joi.string().required(),
+		email: joi.string().email().required(),
 	});
 	const validation = schema.validate({ value, description });
 
@@ -107,11 +108,18 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 		res.status(422).send(errors);
 	}
 	try {
+		const session = await db.collection("sessions").findOne({ token });
+		if (!session) return res.sendStatus(401);
+
 		if (tipo === "entrada") {
-			await db.collection("transactions").insertOne(transaction);
+			await db
+				.collection("transactions")
+				.insertOne({ ...transaction, type: "entrada", idUser: session.userId });
 			return res.sendStatus(201);
 		} else if (tipo === "saida") {
-			await db.collection("transactions").deleteOne({ id: transaction.id });
+			await db
+				.collection("transactions")
+				.insertOne({ ...transaction, type: "saida" });
 			return res.sendStatus(201);
 		}
 	} catch (err) {
@@ -124,14 +132,14 @@ app.get("/transacoes", async (req, res) => {
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
 	try {
-		const session = await db.collection("sessions").findOne({ userId: token });
+		const session = await db.collection("sessions").findOne({ token });
 		if (!session) return res.sendStatus(401);
 		const user = await db.collection("users").findOne({
 			_id: session.userId,
 		});
 		const transactions = await db
 			.collection("transactions")
-			.find({ id: user })
+			.find({ _id: user._id })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

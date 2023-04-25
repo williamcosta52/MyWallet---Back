@@ -99,7 +99,6 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 	const schema = joi.object({
 		value: joi.number().positive().precision(2).required(),
 		description: joi.string().required(),
-		email: joi.string().email().required(),
 	});
 	const validation = schema.validate({ value, description });
 

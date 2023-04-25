@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import ObjectId from "mongodb";
+import { ObjectID } from "mongodb";
 import db from "../database/database.connection.js";
 
 export async function newTransaction(req, res) {
@@ -40,7 +40,7 @@ export async function getTransactions(req, res) {
 		if (!session) return res.sendStatus(401);
 		const transactions = await db
 			.collection("transactions")
-			.find({ idUser: new ObjectId(session.userId) })
+			.find({ idUser: new ObjectID(session.userId) })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

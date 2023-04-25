@@ -1,6 +1,6 @@
 import express, { json } from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
 import joi from "joi";
 import bcrypt from "bcrypt";
@@ -133,12 +133,9 @@ app.get("/transacoes", async (req, res) => {
 	try {
 		const session = await db.collection("sessions").findOne({ token });
 		if (!session) return res.sendStatus(401);
-		const user = await db.collection("users").findOne({
-			_id: session.userId,
-		});
 		const transactions = await db
 			.collection("transactions")
-			.find({ _id: user._id })
+			.find({ idUser: new ObjectId(session.userId) })
 			.toArray();
 		return res.send(transactions);
 	} catch (err) {

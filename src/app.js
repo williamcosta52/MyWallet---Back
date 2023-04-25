@@ -68,12 +68,11 @@ app.post("/login", async (req, res) => {
 		}
 		const verifyUser = await db.collection("users").findOne({ email });
 		if (!verifyUser) return res.status(404).send("Usuário não encontrado!");
-
 		if (verifyUser && bcrypt.compareSync(password, verifyUser.password)) {
 			const token = uuid();
-
-			await db.collection("sessions").insertOne({ userId: user._id, token });
-
+			await db
+				.collection("sessions")
+				.insertOne({ userId: verifyUser._id, token });
 			return res.status(200).send(token);
 		} else {
 			return res.sendStatus(401);
@@ -112,7 +111,6 @@ app.post("/nova-transacao/:tipo", async (req, res) => {
 			await db.collection("transactions").insertOne(transaction);
 			return res.sendStatus(201);
 		} else if (tipo === "saida") {
-			const { id } = req.body;
 			await db.collection("transactions").deleteOne({ id: transaction.id });
 			return res.sendStatus(201);
 		}
@@ -125,9 +123,8 @@ app.get("/transacoes", async (req, res) => {
 	const { authorization } = req.headers;
 	const token = authorization?.replace("Bearer ", "");
 	if (!token) return res.sendStatus(401);
-	const id = uuid();
 	try {
-		const session = await db.collection("sessions").findOne({ token });
+		const session = await db.collection("sessions").findOne({ userId: token });
 		if (!session) return res.sendStatus(401);
 		const user = await db.collection("users").findOne({
 			_id: session.userId,
